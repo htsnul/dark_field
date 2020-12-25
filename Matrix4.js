@@ -12,9 +12,9 @@ class Matrix4 {
   }
   static rotateY(angle) {
     return new Matrix4([
-      +Math.cos(angle), 0, +Math.sin(angle), 0,
+      +Math.cos(angle), 0, -Math.sin(angle), 0,
       0, 1, 0, 0,
-      -Math.sin(angle), 0, +Math.cos(angle), 0,
+      +Math.sin(angle), 0, +Math.cos(angle), 0,
       0, 0, 0, 1
     ]);
   }

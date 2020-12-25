@@ -617,14 +617,18 @@ class Ship {
     }
     const velSign = new Vector2();
     if (controller.isButtonHeld('KEY_A')) {
-      velSign.x = -1;
+      velSign.x = -Math.cos(this.angle);
+      velSign.y = -Math.sin(this.angle);
     } else if (controller.isButtonHeld('KEY_D')) {
-      velSign.x = +1;
+      velSign.x = +Math.cos(this.angle);
+      velSign.y = +Math.sin(this.angle);
     }
     if (controller.isButtonHeld('KEY_W')) {
-      velSign.y = -1;
+      velSign.x = +Math.sin(this.angle);
+      velSign.y = -Math.cos(this.angle);
     } else if (controller.isButtonHeld('KEY_S')) {
-      velSign.y = +1;
+      velSign.x = -Math.sin(this.angle);
+      velSign.y = +Math.cos(this.angle);
     }
     if (controller.isButtonHeld('KEY_LEFT')) {
       this._angle -= Math.PI / 16;
@@ -1026,28 +1030,28 @@ function update() {
   renderer.addTriangle(tri
     .getMultiplied(Matrix4.rotateY(angle))
     .getMultiplied(Matrix4.rotateZ(angle))
-    .getMultiplied(Matrix4.translate(new Vector3(0, 0, -3)))
-    .getMultiplied(Matrix4.translate(new Vector3(-ship.position.x, 0, -ship.position.y)))
+    .getMultiplied(Matrix4.translate(new Vector3(0, 0, +3)))
+    .getMultiplied(Matrix4.translate(new Vector3(-ship.position.x, 0, ship.position.y)))
   );
   for (let i = 0; i < 4; ++i) {
     renderer.addTriangle(new Triangle([
-        new Vector3(-0.5, 0, -0.5),
         new Vector3(-0.5, 0, +0.5),
-        new Vector3(+0.5, 0, +0.5)
+        new Vector3(-0.5, 0, -0.5),
+        new Vector3(+0.5, 0, -0.5)
       ])
       .getMultiplied(Matrix4.translate(new Vector3(0, 0.5, 0)))
       .getMultiplied(Matrix4.rotateZ(i * Math.PI / 2))
-      .getMultiplied(Matrix4.translate(new Vector3(-ship.position.x, 0, -ship.position.y)))
+      .getMultiplied(Matrix4.translate(new Vector3(-ship.position.x, 0, ship.position.y)))
       .getMultiplied(Matrix4.rotateY(-ship.angle))
     );
     renderer.addTriangle(new Triangle([
-        new Vector3(+0.5, 0, +0.5),
         new Vector3(+0.5, 0, -0.5),
-        new Vector3(-0.5, 0, -0.5)
+        new Vector3(+0.5, 0, +0.5),
+        new Vector3(-0.5, 0, +0.5)
       ])
       .getMultiplied(Matrix4.translate(new Vector3(0, 0.5, 0)))
       .getMultiplied(Matrix4.rotateZ(i * Math.PI / 2))
-      .getMultiplied(Matrix4.translate(new Vector3(-ship.position.x, 0, -ship.position.y)))
+      .getMultiplied(Matrix4.translate(new Vector3(-ship.position.x, 0, ship.position.y)))
       .getMultiplied(Matrix4.rotateY(-ship.angle))
     );
   }
@@ -1055,7 +1059,7 @@ function update() {
     const fy = -0.5 + y / Screen.HEIGHT;
     for (let x = 0; x < Screen.WIDTH; ++x) {
       const fx = (-0.5 + x / Screen.WIDTH) * Screen.WIDTH / Screen.HEIGHT;
-      const rayDir = new Vector3(fx, fy, -1).normalized();
+      const rayDir = new Vector3(fx, fy, 1).normalized();
       screen.drawPixel(x, y, renderer.getColor(new Vector3(0, 0, 0), rayDir));
     }
   }

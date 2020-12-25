@@ -12,9 +12,9 @@ class Triangle {
     ]);
   }
   getNormal() {
-    const d1to0 = Vector3.sub(this.points[0], this.points[1]);
     const d1to2 = Vector3.sub(this.points[2], this.points[1]);
-    return Vector3.cross(d1to0, d1to2).normalized();
+    const d1to0 = Vector3.sub(this.points[0], this.points[1]);
+    return Vector3.cross(d1to2, d1to0).normalized();
   }
 }
 
