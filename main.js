@@ -120,12 +120,12 @@ const stageDatas = [
   {
     table: [
       "################################",
-      "#S        #     # #            #",
-      "# ### ### #     # #            #",
-      "# #     # #     # #            #",
-      "# #     # #     #              #",
-      "# #     # ### ### #            #",
-      "# #     #         #            #",
+      "#S        #     # #  # # # #   #",
+      "# ### ### #  #### #  # # # #   #",
+      "# # # # # #  #  # #           ##",
+      "# #     # #     #   ############",
+      "# #  #  # ### ### # #  #########",
+      "# #  #  #         #            #",
       "################################",
       "#                              #",
       "#                              #",
@@ -359,7 +359,7 @@ class Screen {
   }
   beginFrame() {
     const ctx = this._elm.getContext('2d');
-    this._imageData = ctx.getImageData(0, 0, 256, 256);
+    this._imageData = ctx.getImageData(0, 0, Screen.WIDTH, Screen.HEIGHT);
     this.clear();
   }
   endFrame() {
@@ -381,22 +381,20 @@ class Screen {
     this._imageData.data[4 * i + 2] = color[2];
   }
   drawSquare(pos, width, color) {
-    const cx = Math.floor(pos.x);
-    const cy = Math.floor(pos.y);
     const hw = width / 2;
-    let xs = cx - hw;
-    let xe = cx + hw;
-    let ys = cy - hw;
-    let ye = cy + hw;
+    let xs = Math.round(pos.x - hw);
+    let xe = Math.round(pos.x + hw);
+    let ys = Math.round(pos.y - hw);
+    let ye = Math.round(pos.y + hw);
     if (xe < 0 || xs >= Screen.WIDTH || ye < 0 || ys >= Screen.HEIGHT) {
       return;
     }
     xs = Math.max(xs, 0);
-    xe = Math.min(xe, Screen.WIDTH);
+    xe = Math.min(xe, Screen.WIDTH - 1);
     ys = Math.max(ys, 0);
-    ye = Math.min(ye, Screen.HEIGHT);
-    for (let y = ys; y < ye; ++y) {
-      for (let x = xs; x < xe; ++x) {
+    ye = Math.min(ye, Screen.HEIGHT - 1);
+    for (let y = ys; y <= ye; ++y) {
+      for (let x = xs; x <= xe; ++x) {
         const i = Screen.WIDTH * y + x;
         this._imageData.data[4 * i + 0] = color[0];
         this._imageData.data[4 * i + 1] = color[1];
@@ -568,6 +566,7 @@ class Stage {
           );
         }
       }
+      // east wall
       for (let ix = rangeWidth; ix > 0; --ix) {
         const pos = new Vector2(shipIntPosX + ix + 0.5, shipIntPosY + iy + 0.5);
         if (this.isHit(pos) && !this.isHit(pos.clone().add(new Vector3(-1, 0)))) {
@@ -751,7 +750,7 @@ class Ship {
       this._angle += Math.PI / 16;
     }
     const vel = velSign.multiplyScalar(4);
-    vel.clampLength(0, 0.5);
+    vel.clampLength(0, 0.25);
     this._pos.add(vel);
     stage.pushOut(this._pos, 0.5);
     if (this._countToShot > 0) {
@@ -1102,7 +1101,8 @@ class Renderer {
       return [0, 0, 0];
     }
     const dot = Vector3.dot(rayDir.negated(), triangle.getNormal());
-    const a = Math.max(0, Math.min((0.5 * (1 + dot)) / (2 * t), 1));
+    //const a = Math.max(0, Math.min((0.5 * (1 + dot)) / (2 * t), 1));
+    const a = Math.max(0, Math.min((0.5 * (1 + dot)) * Math.pow(2, -1.5 * t), 1));
     return [255 * a, 255 * a, 255 * a];
   }
   _getClosestTriangle(rayStart, rayDir) {
@@ -1185,12 +1185,20 @@ function update() {
       .getMultiplied(camMtx)
     );
   }
-  for (let y = 0; y < Screen.HEIGHT; ++y) {
-    const fy = -0.5 + y / Screen.HEIGHT;
-    for (let x = 0; x < Screen.WIDTH; ++x) {
-      const fx = (-0.5 + x / Screen.WIDTH) * Screen.WIDTH / Screen.HEIGHT;
-      const rayDir = new Vector3(fx, fy, 1).normalized();
-      screen.drawPixel(x, y, renderer.getColor(new Vector3(0, 0, 0), rayDir));
+  {
+    const height = 64;
+    const width = 64;
+    const pixelW = 4;
+    for (let y = 0; y < height; ++y) {
+      const fy = -0.5 + y / height;
+      for (let x = 0; x < width; ++x) {
+        const fx = (-0.5 + x / width) * width / height;
+        const rayDir = new Vector3(fx, fy, 1).normalized();
+        screen.drawSquare(
+          new Vector2((x + 0.5) * pixelW, (y + 0.5) * pixelW), pixelW,
+          renderer.getColor(new Vector3(0, 0, 0), rayDir)
+        );
+      }
     }
   }
   controller.updatePrev();
