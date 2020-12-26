@@ -120,42 +120,39 @@ const stageDatas = [
   {
     table: [
       "################################",
-      "#                              #",
-      "# # # #  ##   ### ###          #",
-      "# # # # #  # #    #  #         #",
-      "# # # # ####  ##  #  #         #",
-      "# # # # #  #    # #  #         #",
-      "#  # #  #  # ###  ###          #",
-      "#                              #",
-      "# #   #  ##  #  #  ### ####    #",
-      "# ## ## #  # #  # #    #       #",
-      "# # # # #  # #  #  ##  ###     #",
-      "# #   # #  # #  #    # #       #",
-      "# #   #  ##   ##  ###  ####    #",
-      "#                              #",
-      "#                              #",
-      "#              a               #",
+      "#S        #     # #            #",
+      "# ### ### #     # #            #",
+      "# #     # #     # #            #",
+      "# #     # #     #              #",
+      "# #     # ### ### #            #",
+      "# #     #         #            #",
+      "################################",
       "#                              #",
       "#                              #",
       "#                              #",
       "#                              #",
       "#                              #",
       "#                              #",
-      "#              #               #",
       "#                              #",
       "#                              #",
       "#                              #",
       "#                              #",
       "#                              #",
-      "#              S               #",
+      "#                              #",
+      "#                              #",
+      "#                              #",
+      "#                              #",
+      "#                              #",
+      "#                              #",
+      "#                              #",
+      "#                              #",
+      "#                              #",
+      "#                              #",
       "#                              #",
       "#                              #",
       "################################",
     ],
     enemies: {
-      "a": {
-        type: "Enemy0",
-      },
     }
   },
   {
@@ -343,7 +340,7 @@ class Screen {
     this._elm.width = Screen.WIDTH;
     this._elm.height = Screen.HEIGHT;
     this._elm.className = 'screen';
-    this._elm.style.border = '1px solid #888';
+    this._elm.style.border = '1px solid #444';
     this._elm.style.imageRendering = 'pixelated';
     this._elm.style.width = `${this._elm.width * 2}px`;
     this._elm.style.height = `${this._elm.height * 2}px`;
@@ -471,7 +468,7 @@ class Screen {
 
 class Stage {
   static get CELL_WIDTH() {
-    return 8;
+    return 1;
   }
   static get WIDTH_IN_CELL() {
     return 32;
@@ -484,7 +481,6 @@ class Stage {
     }
   }
   _getStartPosition() {
-    return new Vector2(0, 0);
     for (let y = 0; y < Stage.WIDTH_IN_CELL; ++y) {
       for (let x = 0; x < Stage.WIDTH_IN_CELL; ++x) {
         if (this._table[y][x] === 'S') {
@@ -539,7 +535,125 @@ class Stage {
       }
     }
   }
-  update() {
+  update(camMtx) {
+    const shipIntPosX = Math.floor(ship.position.x);
+    const shipIntPosY = Math.floor(ship.position.y);
+    const rangeWidth = 3;
+    // west wall
+    for (let iy = -rangeWidth; iy <= rangeWidth; ++iy) {
+      for (let ix = -rangeWidth; ix < 0; ++ix) {
+        const pos = new Vector2(shipIntPosX + ix + 0.5, shipIntPosY + iy + 0.5);
+        if (this.isHit(pos) && !this.isHit(pos.clone().add(new Vector3(1, 0)))) {
+          renderer.addTriangle(
+            new Triangle([
+              new Vector3(-0.5, 0, +0.5),
+              new Vector3(-0.5, 0, -0.5),
+              new Vector3(+0.5, 0, +0.5)
+            ])
+            .getMultiplied(Matrix4.translate(new Vector3(0, -0.5, 0)))
+            .getMultiplied(Matrix4.rotateZ(0.5 * Math.PI))
+            .getMultiplied(Matrix4.translate(new Vector3(pos.x, 0, -pos.y)))
+            .getMultiplied(camMtx)
+          );
+          renderer.addTriangle(
+            new Triangle([
+              new Vector3(+0.5, 0, +0.5),
+              new Vector3(-0.5, 0, -0.5),
+              new Vector3(+0.5, 0, -0.5)
+            ])
+            .getMultiplied(Matrix4.translate(new Vector3(0, -0.5, 0)))
+            .getMultiplied(Matrix4.rotateZ(0.5 * Math.PI))
+            .getMultiplied(Matrix4.translate(new Vector3(pos.x, 0, -pos.y)))
+            .getMultiplied(camMtx)
+          );
+        }
+      }
+      for (let ix = rangeWidth; ix > 0; --ix) {
+        const pos = new Vector2(shipIntPosX + ix + 0.5, shipIntPosY + iy + 0.5);
+        if (this.isHit(pos) && !this.isHit(pos.clone().add(new Vector3(-1, 0)))) {
+          renderer.addTriangle(
+            new Triangle([
+              new Vector3(-0.5, 0, +0.5),
+              new Vector3(-0.5, 0, -0.5),
+              new Vector3(+0.5, 0, +0.5)
+            ])
+            .getMultiplied(Matrix4.translate(new Vector3(0, -0.5, 0)))
+            .getMultiplied(Matrix4.rotateZ(-0.5 * Math.PI))
+            .getMultiplied(Matrix4.translate(new Vector3(pos.x, 0, -pos.y)))
+            .getMultiplied(camMtx)
+          );
+          renderer.addTriangle(
+            new Triangle([
+              new Vector3(+0.5, 0, +0.5),
+              new Vector3(-0.5, 0, -0.5),
+              new Vector3(+0.5, 0, -0.5)
+            ])
+            .getMultiplied(Matrix4.translate(new Vector3(0, -0.5, 0)))
+            .getMultiplied(Matrix4.rotateZ(-0.5 * Math.PI))
+            .getMultiplied(Matrix4.translate(new Vector3(pos.x, 0, -pos.y)))
+            .getMultiplied(camMtx)
+          );
+        }
+      }
+    }
+    for (let ix = -rangeWidth; ix <= rangeWidth; ++ix) {
+      // north wall
+      for (let iy = -rangeWidth; iy < 0; ++iy) {
+        const pos = new Vector2(shipIntPosX + ix + 0.5, shipIntPosY + iy + 0.5);
+        if (this.isHit(pos) && !this.isHit(pos.clone().add(new Vector3(0, 1)))) {
+          renderer.addTriangle(
+            new Triangle([
+              new Vector3(-0.5, 0, +0.5),
+              new Vector3(-0.5, 0, -0.5),
+              new Vector3(+0.5, 0, +0.5)
+            ])
+            .getMultiplied(Matrix4.translate(new Vector3(0, -0.5, 0)))
+            .getMultiplied(Matrix4.rotateX(0.5 * Math.PI))
+            .getMultiplied(Matrix4.translate(new Vector3(pos.x, 0, -pos.y)))
+            .getMultiplied(camMtx)
+          );
+          renderer.addTriangle(
+            new Triangle([
+              new Vector3(+0.5, 0, +0.5),
+              new Vector3(-0.5, 0, -0.5),
+              new Vector3(+0.5, 0, -0.5)
+            ])
+            .getMultiplied(Matrix4.translate(new Vector3(0, -0.5, 0)))
+            .getMultiplied(Matrix4.rotateX(0.5 * Math.PI))
+            .getMultiplied(Matrix4.translate(new Vector3(pos.x, 0, -pos.y)))
+            .getMultiplied(camMtx)
+          );
+        }
+      }
+      // south wall
+      for (let iy = rangeWidth; iy > 0; --iy) {
+        const pos = new Vector2(shipIntPosX + ix + 0.5, shipIntPosY + iy + 0.5);
+        if (this.isHit(pos) && !this.isHit(pos.clone().add(new Vector3(0, -1)))) {
+          renderer.addTriangle(
+            new Triangle([
+              new Vector3(-0.5, 0, +0.5),
+              new Vector3(-0.5, 0, -0.5),
+              new Vector3(+0.5, 0, +0.5)
+            ])
+            .getMultiplied(Matrix4.translate(new Vector3(0, -0.5, 0)))
+            .getMultiplied(Matrix4.rotateX(-0.5 * Math.PI))
+            .getMultiplied(Matrix4.translate(new Vector3(pos.x, 0, -pos.y)))
+            .getMultiplied(camMtx)
+          );
+          renderer.addTriangle(
+            new Triangle([
+              new Vector3(+0.5, 0, +0.5),
+              new Vector3(-0.5, 0, -0.5),
+              new Vector3(+0.5, 0, -0.5)
+            ])
+            .getMultiplied(Matrix4.translate(new Vector3(0, -0.5, 0)))
+            .getMultiplied(Matrix4.rotateX(-0.5 * Math.PI))
+            .getMultiplied(Matrix4.translate(new Vector3(pos.x, 0, -pos.y)))
+            .getMultiplied(camMtx)
+          );
+        }
+      }
+    }
     const cw = Stage.CELL_WIDTH;
     const wic = Stage.WIDTH_IN_CELL;
     for (let y = 0; y < wic; ++y) {
@@ -548,14 +662,15 @@ class Stage {
           continue;
         }
         if (this._table[y][x] === '#') {
-          screen.drawSquare(new Vector2(cw * (x + 0.5), cw * (y + 0.5)), cw, [128, 128, 128]);
+          //screen.drawSquare(new Vector2(cw * (x + 0.5), cw * (y + 0.5)), cw, [128, 128, 128]);
+          screen.drawPixel(x, y, [128, 128, 128]);
         }
       }
     }
   }
   _getCell(pos) {
-    const posByGrid = { x: Math.floor(pos.x / 8), y: Math.floor(pos.y / 8) };
-    if (posByGrid.x < 0 || posByGrid.y < 0 || 32 <= posByGrid.x || 32 <= posByGrid.y) {
+    const posByGrid = { x: Math.floor(pos.x / Stage.CELL_WIDTH), y: Math.floor(pos.y / Stage.CELL_WIDTH) };
+    if (posByGrid.x < 0 || posByGrid.y < 0 || Stage.WIDTH_IN_CELL <= posByGrid.x || Stage.WIDTH_IN_CELL <= posByGrid.y) {
       return undefined;
     }
     return this._table[posByGrid.y][posByGrid.x];
@@ -587,7 +702,7 @@ class Stage {
 class Ship {
   constructor() {
     this._pos = new Vector2();
-    this._angle = 0;
+    this._angle = Math.PI;
     this._vel = new Vector2();
     this._isDead = false;
     this._countToShot = 0;
@@ -617,18 +732,18 @@ class Ship {
     }
     const velSign = new Vector2();
     if (controller.isButtonHeld('KEY_A')) {
-      velSign.x = -Math.cos(this.angle);
-      velSign.y = -Math.sin(this.angle);
+      velSign.x += -Math.cos(this.angle);
+      velSign.y += -Math.sin(this.angle);
     } else if (controller.isButtonHeld('KEY_D')) {
-      velSign.x = +Math.cos(this.angle);
-      velSign.y = +Math.sin(this.angle);
+      velSign.x += +Math.cos(this.angle);
+      velSign.y += +Math.sin(this.angle);
     }
     if (controller.isButtonHeld('KEY_W')) {
-      velSign.x = +Math.sin(this.angle);
-      velSign.y = -Math.cos(this.angle);
+      velSign.x += +Math.sin(this.angle);
+      velSign.y += -Math.cos(this.angle);
     } else if (controller.isButtonHeld('KEY_S')) {
-      velSign.x = -Math.sin(this.angle);
-      velSign.y = +Math.cos(this.angle);
+      velSign.x += -Math.sin(this.angle);
+      velSign.y += +Math.cos(this.angle);
     }
     if (controller.isButtonHeld('KEY_LEFT')) {
       this._angle -= Math.PI / 16;
@@ -638,7 +753,7 @@ class Ship {
     const vel = velSign.multiplyScalar(4);
     vel.clampLength(0, 0.5);
     this._pos.add(vel);
-    //stage.pushOut(this._pos, 4);
+    stage.pushOut(this._pos, 0.5);
     if (this._countToShot > 0) {
       this._countToShot--;
     }
@@ -987,7 +1102,7 @@ class Renderer {
       return [0, 0, 0];
     }
     const dot = Vector3.dot(rayDir.negated(), triangle.getNormal());
-    const a = Math.max(0, Math.min((0.5 * (1 + dot)) / t, 1));
+    const a = Math.max(0, Math.min((0.5 * (1 + dot)) / (2 * t), 1));
     return [255 * a, 255 * a, 255 * a];
   }
   _getClosestTriangle(rayStart, rayDir) {
@@ -1011,48 +1126,63 @@ class Renderer {
 
 function update() {
   if (enemies.isEmpty) {
-    stage.goToNextStage();
+    //stage.goToNextStage();
   }
+  renderer.clearTriangles();
+  const camMtx = Matrix4.mul(
+    Matrix4.rotateY(-ship.angle),
+    Matrix4.translate(new Vector3(-ship.position.x, 0, ship.position.y))
+  );
   screen.beginFrame();
-  stage.update();
+  stage.update(camMtx);
   ship.update();
   enemies.update();
   shots.update();
   bullets.update();
   effects.update();
-  renderer.clearTriangles();
   angle += 10 * Math.PI / 180;
-  let tri = new Triangle([
-    new Vector3(0, -0.5, 0),
-    new Vector3(-0.5, +0.5, 0),
-    new Vector3(+0.5, +0.5, 0)
-  ]);
-  renderer.addTriangle(tri
-    .getMultiplied(Matrix4.rotateY(angle))
-    .getMultiplied(Matrix4.rotateZ(angle))
-    .getMultiplied(Matrix4.translate(new Vector3(0, 0, +3)))
-    .getMultiplied(Matrix4.translate(new Vector3(-ship.position.x, 0, ship.position.y)))
-  );
-  for (let i = 0; i < 4; ++i) {
-    renderer.addTriangle(new Triangle([
-        new Vector3(-0.5, 0, +0.5),
+  // ground
+  {
+    renderer.addTriangle(
+      new Triangle([
+        new Vector3(-128, 0.5, +128),
+        new Vector3(-128, 0.5, -128),
+        new Vector3(+128, 0.5, -128)
+      ])
+      .getMultiplied(camMtx)
+    );
+    renderer.addTriangle(
+      new Triangle([
+        new Vector3(-128, 0.5, +128),
+        new Vector3(+128, 0.5, -128),
+        new Vector3(+128, 0.5, +128)
+      ])
+      .getMultiplied(camMtx)
+    );
+  }
+  // test triangle
+  {
+    renderer.addTriangle(
+      new Triangle([
+        new Vector3(0, 0, +0.3),
         new Vector3(-0.5, 0, -0.5),
         new Vector3(+0.5, 0, -0.5)
       ])
-      .getMultiplied(Matrix4.translate(new Vector3(0, 0.5, 0)))
-      .getMultiplied(Matrix4.rotateZ(i * Math.PI / 2))
-      .getMultiplied(Matrix4.translate(new Vector3(-ship.position.x, 0, ship.position.y)))
-      .getMultiplied(Matrix4.rotateY(-ship.angle))
+      .getMultiplied(Matrix4.rotateZ(angle))
+      .getMultiplied(Matrix4.rotateY(angle))
+      .getMultiplied(Matrix4.translate(new Vector3(1.5, 0, -3.5)))
+      .getMultiplied(camMtx)
     );
-    renderer.addTriangle(new Triangle([
+    renderer.addTriangle(
+      new Triangle([
+        new Vector3(0, 0, +0.3),
         new Vector3(+0.5, 0, -0.5),
-        new Vector3(+0.5, 0, +0.5),
-        new Vector3(-0.5, 0, +0.5)
+        new Vector3(-0.5, 0, -0.5)
       ])
-      .getMultiplied(Matrix4.translate(new Vector3(0, 0.5, 0)))
-      .getMultiplied(Matrix4.rotateZ(i * Math.PI / 2))
-      .getMultiplied(Matrix4.translate(new Vector3(-ship.position.x, 0, ship.position.y)))
-      .getMultiplied(Matrix4.rotateY(-ship.angle))
+      .getMultiplied(Matrix4.rotateZ(angle))
+      .getMultiplied(Matrix4.rotateY(angle))
+      .getMultiplied(Matrix4.translate(new Vector3(1.5, 0, -3.5)))
+      .getMultiplied(camMtx)
     );
   }
   for (let y = 0; y < Screen.HEIGHT; ++y) {
