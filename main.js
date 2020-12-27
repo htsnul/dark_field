@@ -1124,6 +1124,88 @@ class Renderer {
   }
 }
 
+function getBoxDistance(rayPos, pos, len) {
+  return Math.max(
+    Math.abs(rayPos.x - pos.x) - len,
+    Math.abs(rayPos.y - pos.y) - len,
+    Math.abs(rayPos.z - pos.z) - len
+  );
+}
+
+function getSpehereDistance(rayPos, pos, len) {
+  return Vector3.sub(rayPos, pos).length() - len;
+}
+
+function getStageDistance(rayPos) {
+  const shipIntPosX = Math.floor(rayPos.x);
+  const shipIntPosY = Math.floor(-rayPos.z);
+  const rangeWidth = 1;
+  let dist = 1;
+  // west wall
+  for (let iy = -rangeWidth; iy <= rangeWidth; ++iy) {
+    for (let ix = -rangeWidth; ix <= rangeWidth; ++ix) {
+      const pos = new Vector2(shipIntPosX + ix + 0.5, shipIntPosY + iy + 0.5);
+      if (stage.isHit(pos)) {
+        dist = Math.min(dist, getBoxDistance(rayPos, new Vector3(pos.x, 0, -pos.y), 0.5));
+      }
+    }
+  }
+  return dist;
+}
+
+let count = 0;
+
+function getDistance(rayPos) {
+  return Math.min(
+   getBoxDistance(rayPos, new Vector3(0, 3 * Math.sin(Math.PI * count / 16), -3 * Math.sin(Math.PI * count / 12)), 1),
+   getSpehereDistance(rayPos, new Vector3(3 * Math.sin(Math.PI * count / 16), 0, 3 * Math.sin(Math.PI * count / 12)), 1),
+   getStageDistance(rayPos)
+  );
+}
+
+function getNormal(rayPos) {
+  const epsilon = 0.05;
+  const dist = getDistance(rayPos);
+  const distPx = getDistance(Vector3.add(rayPos, new Vector3(-epsilon, 0, 0)));
+  const distPy = getDistance(Vector3.add(rayPos, new Vector3(0, -epsilon, 0)));
+  const distPz = getDistance(Vector3.add(rayPos, new Vector3(0, 0, -epsilon)));
+  return new Vector3(dist - distPx, dist - distPy, dist - distPz).normalized();
+}
+
+function testRayMarching() {
+  count++;
+  if (1) {
+    const height = 64;
+    const width = 64;
+    const pixelW = 4;
+    for (let y = 0; y < height; ++y) {
+      const fy = -0.5 + y / height;
+      for (let x = 0; x < width; ++x) {
+        const fx = (-0.5 + x / width) * width / height;
+        const camPos = new Vector3(ship.position.x, 0, -ship.position.y);
+        const rayDir = new Vector3(fx, fy, 1).normalized().multiplied(Matrix4.rotateY(ship.angle));
+        let rayPos = camPos.clone();
+        let color = [0, 0, 0];
+        for (let i = 0; i < 40; ++i) {
+          const dist = getDistance(rayPos);
+          if (dist < 0.01) {
+            const distFromCam = Vector3.sub(rayPos, camPos).length();
+            const dot = Vector3.dot(rayDir.negated(), getNormal(rayPos));
+            const intensity = Math.min(Math.pow(2, -distFromCam / 2) * dot, 1);
+            color = [255 * intensity, 255 * intensity, 255 * intensity];
+            break;
+          }
+          rayPos = Vector3.add(rayPos, rayDir.scaled(dist));
+        }
+        screen.drawSquare(
+          new Vector2((x + 0.5) * pixelW, (y + 0.5) * pixelW), pixelW,
+          color,
+        );
+      }
+    }
+  }
+}
+
 function update() {
   if (enemies.isEmpty) {
     //stage.goToNextStage();
@@ -1185,7 +1267,7 @@ function update() {
       .getMultiplied(camMtx)
     );
   }
-  {
+  if (0) {
     const height = 64;
     const width = 64;
     const pixelW = 4;
@@ -1201,6 +1283,7 @@ function update() {
       }
     }
   }
+  testRayMarching();
   controller.updatePrev();
   screen.endFrame();
 }
