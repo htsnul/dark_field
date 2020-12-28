@@ -795,6 +795,7 @@ class Ship {
     } else if (controller.isButtonHeld('KEY_RIGHT')) {
       this._angle += Math.PI / 16;
     }
+    while (this._angle < 0) this._angle += 2 * Math.PI;
     const vel = velSign.multiplyScalar(4);
     vel.clampLength(0, 0.25);
     this._pos.add(vel);
