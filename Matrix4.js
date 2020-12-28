@@ -3,17 +3,23 @@ class Matrix4 {
   constructor(m) {
     this.m = m;
   }
-  static mul(m0, m1) {
+  static mul() {
     const m = [];
-    for (let x = 0; x < 4; ++x) {
-      for (let y = 0; y < 4; ++y) {
-        m[4 * x + y] = (
-          m0.m[4 * 0 + y] * m1.m[4 * x + 0] +
-          m0.m[4 * 1 + y] * m1.m[4 * x + 1] +
-          m0.m[4 * 2 + y] * m1.m[4 * x + 2] +
-          m0.m[4 * 3 + y] * m1.m[4 * x + 3]
-        );
+    let m0, m1;
+    m0 = arguments[0].m;
+    for (let i = 1; i < arguments.length; ++i) {
+      m1 = arguments[i].m;
+      for (let x = 0; x < 4; ++x) {
+        for (let y = 0; y < 4; ++y) {
+          m[4 * x + y] = (
+            m0[4 * 0 + y] * m1[4 * x + 0] +
+            m0[4 * 1 + y] * m1[4 * x + 1] +
+            m0[4 * 2 + y] * m1[4 * x + 2] +
+            m0[4 * 3 + y] * m1[4 * x + 3]
+          );
+        }
       }
+      m0 = m;
     }
     return new Matrix4(m);
   }
@@ -30,7 +36,7 @@ class Matrix4 {
       1, 0, 0, 0,
       0, 1, 0, 0,
       0, 0, 1, 0,
-      v.x, v.y, v.z, 0,
+      v.x, v.y, v.z, 1,
     ]);
   }
   static rotateX(angle) {

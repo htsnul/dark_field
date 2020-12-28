@@ -6,6 +6,9 @@ class Vector3 {
     this.y = y;
     this.z = z;
   }
+  static all(s) {
+    return new Vector3(s, s, s);
+  }
   clone() {
     return new Vector3(this.x, this.y, this.z);
   }

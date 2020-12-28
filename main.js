@@ -162,7 +162,7 @@ const stageDatas = [
       "################################",
       "#S #    #        # #    #      #",
       "## #  #  # #  ## # # ##   ## # #",
-      "#   #  # ## # #  # # #  # #  # #",
+      "#  a#  # ## # #  # # #  # #  # #",
       "# # ## #    # #### # # # #  # ##",
       "#      # #### #    # # # # ## ##",
       "## ##### #    # #### #  #  #  ##",
@@ -195,6 +195,9 @@ const stageDatas = [
     enemies: {
       "G": {
         type: "Goal",
+      },
+      "a": {
+        type: "Enemy3",
       },
     }
   },
@@ -572,6 +575,9 @@ class Stage {
           case 'SurvivalModeManager':
             new SurvivalModeManager();
             break;
+          case 'Enemy3':
+            new Enemy3(pos);
+            break;
           case 'Goal':
             new Goal(pos);
             break;
@@ -930,6 +936,46 @@ class Enemy2 {
   }
 }
 
+class Enemy3 {
+  constructor(pos) {
+    this._pos = pos;
+    this._count = 0;
+    enemies.append(this);
+  }
+  update() {
+    this._count++;
+    this._distMtx0 = Matrix4.translate(new Vector3(-this._pos.x, 0, +this._pos.y));
+    this._headDistMtx = Matrix4.mul(
+      Matrix4.translate(new Vector3(0, 3 / 16, 0)),
+      this._distMtx0
+    );
+    this._leftLegDistMtx = Matrix4.mul(
+      Matrix4.translate(new Vector3(0, -3 / 16, 0)),
+      Matrix4.rotateX(1 / 8 * Math.PI * Math.sin(this._count * Math.PI / 12)),
+      Matrix4.translate(new Vector3(0.5 / 16, -2 / 16, 0)),
+      this._distMtx0
+    );
+    this._rightLegDistMtx = Matrix4.mul(
+      Matrix4.translate(new Vector3(0, -3 / 16, 0)),
+      Matrix4.rotateX(1 / 8 * Math.PI * Math.sin(Math.PI + this._count * Math.PI / 12)),
+      Matrix4.translate(new Vector3(-0.5 / 16, -2 / 16, 0)),
+      this._distMtx0
+    );
+  }
+  getDistance(rayPos) {
+    let dist = getBoxDistance(rayPos, new Vector3(this._pos.x, 0, -this._pos.y), Vector3.all(0.5));
+    if (dist > 0.25) {
+      return dist;
+    }
+    return Math.min(
+      getBoxDistanceWithTransform(rayPos, this._distMtx0, new Vector3(1 / 16, 2 / 16, 0.5 / 16)),
+      getSphereDistanceWithTransform(rayPos, this._headDistMtx, 0.5 / 16),
+      getBoxDistanceWithTransform(rayPos, this._leftLegDistMtx, new Vector3(0.25 / 16, 3 / 16, 0.25 / 16)),
+      getBoxDistanceWithTransform(rayPos, this._rightLegDistMtx, new Vector3(0.25 / 16, 3 / 16, 0.25 / 16)),
+    );
+  }
+}
+
 class SurvivalModeManager {
   constructor(pos) {
     this._count = 0;
@@ -970,22 +1016,25 @@ class Goal {
   constructor(pos) {
     this._pos = pos;
     this._count = 0;
+    this._distMtx = null;
     enemies.append(this);
   }
   update() {
     this._count++;
+    this._distMtx = Matrix4.mul(
+      Matrix4.rotateY(Math.PI * this._count / 12),
+      Matrix4.rotateZ(Math.PI * this._count / 12),
+      Matrix4.translate(new Vector3(-this._pos.x, 0, +this._pos.y)),
+    );
   }
   getDistance(rayPos) {
-    let dist = getBoxDistance(rayPos, new Vector3(this._pos.x, 0, -this._pos.y), 0.5);
+    let dist = getBoxDistance(rayPos, new Vector3(this._pos.x, 0, -this._pos.y), Vector3.all(0.5));
     if (dist > 0.25) {
       return dist;
     }
     return Math.min(
-      getRotatedBoxDistance(rayPos, new Vector3(this._pos.x, +0.0, -this._pos.y), 1 / 8, Matrix4.mul(
-        Matrix4.rotateY(Math.PI * this._count / 12),
-        Matrix4.rotateZ(Math.PI * this._count / 12),
-      )),
-      getSpehereDistance(rayPos, new Vector3(this._pos.x, +0.5, -this._pos.y), 0.25),
+      getBoxDistanceWithTransform(rayPos, this._distMtx, 1 / 8),
+      getSpehereDistance(rayPos, new Vector3(this._pos.x, +0.5, -this._pos.y), Vector3.all(0.25)),
     );
   }
 }
@@ -1209,25 +1258,30 @@ function getPlaneYDistance(rayPos, posY) {
   return Math.abs(rayPos.y - posY);
 }
 
-function getBoxDistance(rayPos, pos, len) {
+function getBoxDistance(rayPos, pos, halfSize) {
   return Math.max(
-    Math.abs(rayPos.x - pos.x) - len,
-    Math.abs(rayPos.y - pos.y) - len,
-    Math.abs(rayPos.z - pos.z) - len
+    Math.abs(rayPos.x - pos.x) - halfSize.x,
+    Math.abs(rayPos.y - pos.y) - halfSize.y,
+    Math.abs(rayPos.z - pos.z) - halfSize.z
   );
 }
 
-function getRotatedBoxDistance(rayPos, pos, len, mtx) {
-  const p = Vector3.sub(rayPos, pos).multiplied(mtx);
+function getBoxDistanceWithTransform(rayPos, mtx, halfSize) {
+  const p = rayPos.multiplied(mtx);
   return Math.max(
-    Math.abs(p.x) - len,
-    Math.abs(p.y) - len,
-    Math.abs(p.z) - len
+    Math.abs(p.x) - halfSize.x,
+    Math.abs(p.y) - halfSize.y,
+    Math.abs(p.z) - halfSize.z
   );
 }
 
 function getSpehereDistance(rayPos, pos, len) {
   return Vector3.sub(rayPos, pos).length() - len;
+}
+
+function getSphereDistanceWithTransform(rayPos, mtx, len) {
+  const p = rayPos.multiplied(mtx);
+  return p.length() - len;
 }
 
 function getStageDistance(rayPos) {
@@ -1240,7 +1294,7 @@ function getStageDistance(rayPos) {
     for (let ix = -rangeWidth; ix <= rangeWidth; ++ix) {
       const pos = new Vector2(shipIntPosX + ix + 0.5, shipIntPosY + iy + 0.5);
       if (stage.isHit(pos)) {
-        dist = Math.min(dist, getBoxDistance(rayPos, new Vector3(pos.x, 0, -pos.y), 0.5));
+        dist = Math.min(dist, getBoxDistance(rayPos, new Vector3(pos.x, 0, -pos.y), Vector3.all(0.5)));
       }
     }
   }
