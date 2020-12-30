@@ -1,3 +1,4 @@
+import HeroFireball from "./HeroFireball.js"
 import Vector3 from "./Vector3.js"
 
 class Hero {
@@ -23,7 +24,7 @@ class Hero {
   get isDead() {
     return this._isDead;
   }
-  update(controller, stage) {
+  update(controller, stage, heroAttackManager) {
     if (this._isDead) {
       this._deadWaitCountToRestart--;
       if (this._deadWaitCountToRestart <= 0) {
@@ -32,23 +33,23 @@ class Hero {
       return;
     }
     const velSign = new Vector3(0, 0, 0);
-    if (controller.isButtonHeld('KEY_A')) {
-      velSign.x += -Math.cos(this.angle);
-      velSign.z += +Math.sin(this.angle);
-    } else if (controller.isButtonHeld('KEY_D')) {
-      velSign.x += +Math.cos(this.angle);
-      velSign.z += -Math.sin(this.angle);
+    if (controller.isButtonDown('KEY_A')) {
+      velSign.x += -Math.cos(this._angle);
+      velSign.z += +Math.sin(this._angle);
+    } else if (controller.isButtonDown('KEY_D')) {
+      velSign.x += +Math.cos(this._angle);
+      velSign.z += -Math.sin(this._angle);
     }
-    if (controller.isButtonHeld('KEY_W')) {
-      velSign.x += +Math.sin(this.angle);
-      velSign.z += +Math.cos(this.angle);
-    } else if (controller.isButtonHeld('KEY_S')) {
-      velSign.x += -Math.sin(this.angle);
-      velSign.z += -Math.cos(this.angle);
+    if (controller.isButtonDown('KEY_W')) {
+      velSign.x += +Math.sin(this._angle);
+      velSign.z += +Math.cos(this._angle);
+    } else if (controller.isButtonDown('KEY_S')) {
+      velSign.x += -Math.sin(this._angle);
+      velSign.z += -Math.cos(this._angle);
     }
-    if (controller.isButtonHeld('KEY_LEFT')) {
+    if (controller.isButtonDown('KEY_LEFT')) {
       this._angle -= Math.PI / 16;
-    } else if (controller.isButtonHeld('KEY_RIGHT')) {
+    } else if (controller.isButtonDown('KEY_RIGHT')) {
       this._angle += Math.PI / 16;
     }
     while (this._angle < 0) this._angle += 2 * Math.PI;
@@ -59,8 +60,8 @@ class Hero {
     if (this._countToShot > 0) {
       this._countToShot--;
     }
-    if (controller.isButtonHeld('MOUSE_BUTTON_LEFT') && this._countToShot === 0) {
-      new Shot(this._pos, controller.mousePosition.clone().sub(this._pos).normalize().multiplyScalar(8));
+    if (controller.isButtonDown("KEY_SHIFT_RIGHT") && this._countToShot === 0) {
+      new HeroFireball(heroAttackManager, this._pos.clone(), this._angle);
       this._countToShot = 4;
     }
     //screen.drawCircle(this._pos, 4, [224, 224, 255]);

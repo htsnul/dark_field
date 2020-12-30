@@ -1,56 +1,13 @@
 import Controller from "./Controller.js"
 import EnemyManager from "./EnemyManager.js"
 import Hero from "./Hero.js"
+import HeroAttackManager from "./HeroAttackManager.js"
 import Matrix4 from "./Matrix4.js"
 import RayMarchingUtil from "./RayMarchingUtil.js"
 import Screen from "./Screen.js"
 import Stage from "./Stage.js"
 import Vector2 from "./Vector2.js"
 import Vector3 from "./Vector3.js"
-
-class Shot {
-  constructor(pos, vel) {
-    this._pos = new Vector2(pos);
-    this._vel = new Vector2(vel);
-    shots.append(this);
-  }
-  update() {
-    this._pos.add(this._vel);
-    if (stage.isHit(this._pos)) {
-      new Explosion(this._pos, 2);
-      shots.remove(this);
-      return;
-    }
-    {
-      const hitEnemy = enemies.findHit(this._pos, 4);
-      if (hitEnemy !== undefined) {
-        hitEnemy.onHit();
-        new Explosion(this._pos, 2);
-        shots.remove(this);
-        return;
-      }
-    }
-    screen.drawCircle(this._pos, 2, [128, 128, 255]);
-  }
-}
-
-class Shots {
-  constructor() {
-    this._shots = [];
-  }
-  reset() {
-    this._shots = [];
-  }
-  append(shot) {
-    this._shots.push(shot);
-  }
-  remove(shot) {
-    this._shots = this._shots.filter(s => s !== shot);
-  }
-  update(stage) {
-    this._shots.forEach(shot => shot.update(stage));
-  }
-}
 
 class Bullet {
   constructor(pos, vel) {
@@ -138,7 +95,6 @@ class Effects {
   }
 }
 
-let shots;
 let bullets;
 let effects;
 
@@ -149,20 +105,20 @@ class App {
     this._stage = new Stage();
     this._hero = new Hero();
     this._enemyManager = new EnemyManager();
-    shots = new Shots();
+    this._heroAttackManager = new HeroAttackManager();
     bullets = new Bullets();
     effects = new Effects();
-    this._stage.reset(this._hero, this._enemyManager, shots, bullets);
+    this._stage.reset(this._hero, this._enemyManager, this._heroAttackManager, bullets);
     setInterval(() => this.update(), 100);
   }
   update() {
     if (this._enemyManager.isEmpty) {
-      //this._stage.goToNextStage(this._hero, this._enemyManager, shots, bullets);
+      //this._stage.goToNextStage(this._hero, this._enemyManager, this._heroAttackManager, bullets);
     }
     this._screen.beginFrame();
-    this._hero.update(this._controller, this._stage);
+    this._hero.update(this._controller, this._stage, this._heroAttackManager);
     this._enemyManager.update(this._stage, this._hero);
-    shots.update(this._stage);
+    this._heroAttackManager.update(this._stage);
     bullets.update();
     effects.update();
     this._renderRayMarching();
@@ -179,8 +135,9 @@ class App {
     return Math.min(
      RayMarchingUtil.getPlaneYDistance(rayPos, -0.5),
      RayMarchingUtil.getPlaneYDistance(rayPos, 0.5),
+     this._stage.getDistance(rayPos),
      this._enemyManager.getDistance(rayPos),
-     this._stage.getDistance(rayPos)
+     this._heroAttackManager.getDistance(rayPos),
     );
   }
   //   z
