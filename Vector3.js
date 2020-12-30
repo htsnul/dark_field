@@ -12,6 +12,27 @@ class Vector3 {
   clone() {
     return new Vector3(this.x, this.y, this.z);
   }
+  add(v) {
+    this.x += v.x;
+    this.y += v.y;
+    this.z += v.z;
+  }
+  scale(s) {
+    this.x *= s;
+    this.y *= s;
+    this.z *= s;
+  }
+  clampByLength(min, max) {
+    const len = this.length();
+    if (len === 0) {
+      return this;
+    }
+    if (len < min) {
+      this.scale(min / len);
+    } else if (len > max) {
+      this.scale(max / len);
+    }
+  }
   length() {
     return Math.sqrt(this.x * this.x + this.y * this.y + this.z * this.z);
   }
