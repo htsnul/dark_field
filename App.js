@@ -142,36 +142,60 @@ class App {
     }
     this._screen.endFrame();
   }
-  _getDistance(rayPos) {
-    return Math.min(
-     RayMarchingUtil.getPlaneYDistance(rayPos, -0.5),
-     RayMarchingUtil.getPlaneYDistance(rayPos, 0.5),
-     this._stage.getDistance(rayPos),
-     this._enemyManager.getDistance(rayPos),
-     this._heroAttackManager.getDistance(rayPos),
-    );
+  _updateClosest(closest, rayPos) {
+    {
+      const dist = 0.5 - Math.abs(rayPos.y);
+      if (dist < closest.distance) {
+        closest.distance = dist;
+        const localX = rayPos.x % 1 + ((rayPos.x < 0) ? 1 : 0) - 0.5;
+        const localZ = rayPos.z % 1 + ((rayPos.z < 0) ? 1 : 0) - 0.5;
+        if (Math.max(Math.abs(localX), Math.abs(localZ)) > 0.5 - 1 / 4) {
+          closest.material = { color: [224, 224, 224] };
+        } else {
+          closest.material = undefined;
+        }
+      }
+    }
+    this._stage.updateClosest(closest, rayPos);
+    this._enemyManager.updateClosest(closest, rayPos);
+    this._heroAttackManager.updateClosest(closest, rayPos);
   }
   _calcRayMarchingPointColor(eyePos, rayDir) {
-    let collisionPos;
     let rayPos = eyePos.clone();
-    let color = [0, 0, 0];
+    let closest;
     for (let i = 0; i < 64; ++i) {
-      const dist = this._getDistance(rayPos);
-      if (dist < 0.01) {
-        collisionPos = rayPos;
+      closest = { distance: Infinity };
+      this._updateClosest(closest, rayPos);
+      if (closest.distance < 0.01) {
         break;
       }
-      rayPos.add(rayDir.scaled(dist));
+      rayPos.add(rayDir.scaled(closest.distance));
     }
-    if (collisionPos === undefined) {
+    const collisionPos = rayPos;
+    const collisionNormal = RayMarchingUtil.calcNormal(
+      collisionPos,
+      closest.distance,
+      (rayPos) => {
+        const closest = { distance: Infinity };
+        this._updateClosest(closest, rayPos)
+        return closest.distance;
+      }
+    );
+    const material = closest.material;
+    let color = [0, 0, 0];
+    if (material && material.isLight) {
+      color = [255, 224, 224];
       return color;
     }
-    const collisionNormal = RayMarchingUtil.getNormal(collisionPos, (rayPos) => this._getDistance(rayPos));
     {
       const distFromCam = Vector3.sub(collisionPos, eyePos).length();
       const dot = Vector3.dot(rayDir.negated(), collisionNormal);
       const intensity = Math.min(Math.pow(2, -distFromCam / 2) * dot, 1);
-      color = [255 * intensity, 255 * intensity, 255 * intensity];
+      let baseColor = [255, 255, 255];
+      if (material && material.color) {
+        baseColor = material.color;
+      }
+      color = [baseColor[0] * intensity, baseColor[1] * intensity, baseColor[2] * intensity];
     }
     this._heroAttackManager._attacks.forEach((attack) => {
       const lightPos = attack._pos;
@@ -180,8 +204,9 @@ class App {
       let rayPos = collisionPos.clone();
       rayPos.add(rayDir.scaled(0.02));
       for (let i = 0; i < 64; ++i) {
-        const dist = this._getDistance(rayPos);
-        if (dist < 0.01) {
+        let closest = { distance: Infinity };
+        this._updateClosest(closest, rayPos);
+        if (closest.distance < 0.01) {
           if (Vector3.sub(rayPos, lightPos).length() < 1 / 16 + 0.01) {
             const dot = Vector3.dot(rayDir, collisionNormal);
             if (dot > 0) {
@@ -193,7 +218,7 @@ class App {
           }
           break;
         }
-        rayPos.add(rayDir.scaled(dist));
+        rayPos.add(rayDir.scaled(closest.distance));
       }
     });
     return color;

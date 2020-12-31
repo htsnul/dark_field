@@ -20,15 +20,13 @@ class EnemyManager {
   update(stage, hero) {
     this._enemies.forEach(enemy => enemy.update(stage, hero));
   }
-  getDistance(rayPos) {
-    let dist = 1000;
+  updateClosest(closest, rayPos) {
     this._enemies.forEach(enemy => {
-      if (!enemy.getDistance) {
-        return dist;
+      if (!enemy.updateClosest) {
+        return;
       }
-      dist = Math.min(dist, enemy.getDistance(rayPos))
+      enemy.updateClosest(closest, rayPos);
     });
-    return dist;
   }
 }
 

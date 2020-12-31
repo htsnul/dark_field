@@ -14,15 +14,13 @@ class HeroAttackManager {
   update(stage) {
     this._attacks.forEach(attack => attack.update(this, stage));
   }
-  getDistance(rayPos) {
-    let dist = 1000;
+  updateClosest(closest, rayPos) {
     this._attacks.forEach(attack => {
-      if (!attack.getDistance) {
-        return dist;
+      if (!attack.updateClosest) {
+        return;
       }
-      dist = Math.min(dist, attack.getDistance(rayPos))
+      attack.updateClosest(closest, rayPos);
     });
-    return dist;
   }
 }
 

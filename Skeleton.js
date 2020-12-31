@@ -28,17 +28,20 @@ class Skeleton {
       this._distMtx0
     );
   }
-  getDistance(rayPos) {
-    let dist = RayMarchingUtil.getBoxDistance(rayPos, new Vector3(this._pos.x, 0, -this._pos.y), Vector3.all(0.5));
-    if (dist > 0.25) {
-      return dist;
+  updateClosest(closest, rayPos) {
+    {
+      const dist = RayMarchingUtil.getBoxDistance(rayPos, new Vector3(this._pos.x, 0, -this._pos.y), Vector3.all(0.5));
+      if (dist > 0.25) {
+        if (dist < closest.distance) {
+          closest.distance = dist;
+        }
+        return;
+      }
     }
-    return Math.min(
-      RayMarchingUtil.getBoxDistanceWithTransform(rayPos, this._distMtx0, new Vector3(1 / 16, 2 / 16, 0.5 / 16)),
-      RayMarchingUtil.getSphereDistanceWithTransform(rayPos, this._headDistMtx, 0.5 / 16),
-      RayMarchingUtil.getBoxDistanceWithTransform(rayPos, this._leftLegDistMtx, new Vector3(0.25 / 16, 3 / 16, 0.25 / 16)),
-      RayMarchingUtil.getBoxDistanceWithTransform(rayPos, this._rightLegDistMtx, new Vector3(0.25 / 16, 3 / 16, 0.25 / 16)),
-    );
+    RayMarchingUtil.updateClosestByBoxWithTransform(closest, rayPos, this._distMtx0, new Vector3(1 / 16, 2 / 16, 0.5 / 16));
+    RayMarchingUtil.updateClosestBySphereWithTransform(closest, rayPos, this._headDistMtx, 0.5 / 16);
+    RayMarchingUtil.updateClosestByBoxWithTransform(closest, rayPos, this._leftLegDistMtx, new Vector3(0.25 / 16, 3 / 16, 0.25 / 16));
+    RayMarchingUtil.updateClosestByBoxWithTransform(closest, rayPos, this._rightLegDistMtx, new Vector3(0.25 / 16, 3 / 16, 0.25 / 16));
   }
 }
 

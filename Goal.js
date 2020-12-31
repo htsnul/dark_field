@@ -17,15 +17,18 @@ class Goal {
       Matrix4.translate(new Vector3(-this._pos.x, 0, +this._pos.y)),
     );
   }
-  getDistance(rayPos) {
-    let dist = RayMarchingUtil.getBoxDistance(rayPos, new Vector3(this._pos.x, 0, -this._pos.y), Vector3.all(0.5));
-    if (dist > 0.25) {
-      return dist;
+  updateClosest(closest, rayPos) {
+    {
+      const dist = RayMarchingUtil.getBoxDistance(rayPos, new Vector3(this._pos.x, 0, -this._pos.y), Vector3.all(0.5));
+      if (dist > 0.25) {
+        if (dist < closest.distance) {
+          closest.distance = dist;
+        }
+        return;
+      }
     }
-    return Math.min(
-      RayMarchingUtil.getBoxDistanceWithTransform(rayPos, this._distMtx, Vector3.all(1 / 8)),
-      RayMarchingUtil.getSpehereDistance(rayPos, new Vector3(this._pos.x, +0.5, -this._pos.y), 0.25),
-    );
+    RayMarchingUtil.updateClosestByBoxWithTransform(closest, rayPos, this._distMtx, Vector3.all(1 / 8));
+    RayMarchingUtil.updateClosestBySpehere(closest, rayPos, new Vector3(this._pos.x, +0.5, -this._pos.y), 0.25);
   }
 }
 

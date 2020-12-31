@@ -122,20 +122,35 @@ class Stage {
       pos.z = -Math.floor(-posS.z / cw) * cw + radius;
     }
   }
-  getDistance(rayPos) {
+  updateClosest(closest, rayPos) {
     const shipIntPosX = Math.floor(rayPos.x);
     const shipIntPosY = Math.floor(-rayPos.z);
     const rangeWidth = 1;
-    let dist = 1;
     for (let iy = -rangeWidth; iy <= rangeWidth; ++iy) {
       for (let ix = -rangeWidth; ix <= rangeWidth; ++ix) {
         const pos = new Vector3(shipIntPosX + ix + 0.5, 0, -(shipIntPosY + iy + 0.5));
-        if (this.isHit(pos)) {
-          dist = Math.min(dist, RayMarchingUtil.getBoxDistance(rayPos, new Vector3(pos.x, 0, pos.z), Vector3.all(0.5)));
+        if (!this.isHit(pos)) {
+          continue;
+        }
+        const dist = RayMarchingUtil.getBoxDistance(
+          rayPos, pos, Vector3.all(0.5)
+        );
+        if (dist < closest.distance) {
+          closest.distance = dist;
+          const localPos = Vector3.sub(rayPos, pos);
+          if (Math.min(Math.abs(localPos.x), Math.abs(localPos.z)) > 0.5 - 1 / 8) {
+            closest.material = { color: [224, 224, 224] };
+          } else {
+            closest.material = undefined;
+          }
         }
       }
     }
-    return dist;
+    // Because not checking areas beyond 1 grid,
+    // make sure ray doesn't go any farther.
+    if (1 < closest.distance) {
+      closest.distance = 1;
+    }
   }
 }
 

@@ -25,6 +25,7 @@ class Hero {
     return this._isDead;
   }
   update(controller, stage, heroAttackManager) {
+    const lastPos = this._pos.clone();
     if (this._isDead) {
       this._deadWaitCountToRestart--;
       if (this._deadWaitCountToRestart <= 0) {
@@ -61,7 +62,8 @@ class Hero {
       this._countToShot--;
     }
     if (controller.isButtonDown("KEY_SHIFT_RIGHT") && this._countToShot === 0) {
-      new HeroFireball(heroAttackManager, this._pos.clone(), this._angle);
+      const actualVel = Vector3.sub(this._pos, lastPos);
+      new HeroFireball(heroAttackManager, lastPos.clone(), actualVel, this._angle);
       this._countToShot = 4;
     }
     //screen.drawCircle(this._pos, 4, [224, 224, 255]);
