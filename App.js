@@ -124,8 +124,8 @@ class App {
     this._renderRayMarching();
     this._stage.renderMiniMap(this._screen);
     {
-      const dirIndex = Math.floor((this._hero.angle + Math.PI / 4) / (Math.PI / 2)) % 4;
-      const dirAlphabet = "NESW"[dirIndex];
+      const dirIndex = Math.floor((this._hero.angle + Math.PI / 8) / (Math.PI / 4)) % 8;
+      const dirAlphabet = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"][dirIndex];
       this._screen.drawText(new Vector2(0, 0), dirAlphabet, [255, 255, 255]);
     }
     this._controller.updatePrev();
