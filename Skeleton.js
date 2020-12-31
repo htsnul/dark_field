@@ -1,6 +1,7 @@
 import Matrix4 from "./Matrix4.js"
 import RayMarchingUtil from "./RayMarchingUtil.js"
 import Vector3 from "./Vector3.js"
+import { app } from "./App.js"
 
 class Skeleton {
   constructor(enemyManager, pos) {
@@ -10,27 +11,27 @@ class Skeleton {
   }
   update() {
     this._count++;
-    this._distMtx0 = Matrix4.translate(new Vector3(-this._pos.x, 0, +this._pos.y));
-    this._headDistMtx = Matrix4.mul(
+    this._bodyInvMtx = Matrix4.translate(this._pos.negated());
+    this._headInvMtx = Matrix4.mul(
       Matrix4.translate(new Vector3(0, 3 / 16, 0)),
-      this._distMtx0
+      this._bodyInvMtx
     );
-    this._leftLegDistMtx = Matrix4.mul(
+    this._leftLegInvMtx = Matrix4.mul(
       Matrix4.translate(new Vector3(0, -3 / 16, 0)),
       Matrix4.rotateX(1 / 8 * Math.PI * Math.sin(this._count * Math.PI / 12)),
       Matrix4.translate(new Vector3(0.5 / 16, -2 / 16, 0)),
-      this._distMtx0
+      this._bodyInvMtx
     );
-    this._rightLegDistMtx = Matrix4.mul(
+    this._rightLegInvMtx = Matrix4.mul(
       Matrix4.translate(new Vector3(0, -3 / 16, 0)),
       Matrix4.rotateX(1 / 8 * Math.PI * Math.sin(Math.PI + this._count * Math.PI / 12)),
       Matrix4.translate(new Vector3(-0.5 / 16, -2 / 16, 0)),
-      this._distMtx0
+      this._bodyInvMtx
     );
   }
   updateClosest(closest, rayPos) {
     {
-      const dist = RayMarchingUtil.getBoxDistance(rayPos, new Vector3(this._pos.x, 0, -this._pos.y), Vector3.all(0.5));
+      const dist = RayMarchingUtil.getBoxDistance(rayPos, this._pos, Vector3.all(0.5));
       if (dist > 0.25) {
         if (dist < closest.distance) {
           closest.distance = dist;
@@ -38,10 +39,10 @@ class Skeleton {
         return;
       }
     }
-    RayMarchingUtil.updateClosestByBoxWithTransform(closest, rayPos, this._distMtx0, new Vector3(1 / 16, 2 / 16, 0.5 / 16));
-    RayMarchingUtil.updateClosestBySphereWithTransform(closest, rayPos, this._headDistMtx, 0.5 / 16);
-    RayMarchingUtil.updateClosestByBoxWithTransform(closest, rayPos, this._leftLegDistMtx, new Vector3(0.25 / 16, 3 / 16, 0.25 / 16));
-    RayMarchingUtil.updateClosestByBoxWithTransform(closest, rayPos, this._rightLegDistMtx, new Vector3(0.25 / 16, 3 / 16, 0.25 / 16));
+    RayMarchingUtil.updateClosestByBoxWithTransform(closest, rayPos, this._bodyInvMtx, new Vector3(1 / 16, 2 / 16, 0.5 / 16));
+    RayMarchingUtil.updateClosestBySphereWithTransform(closest, rayPos, this._headInvMtx, 0.5 / 16);
+    RayMarchingUtil.updateClosestByBoxWithTransform(closest, rayPos, this._leftLegInvMtx, new Vector3(0.25 / 16, 3 / 16, 0.25 / 16));
+    RayMarchingUtil.updateClosestByBoxWithTransform(closest, rayPos, this._rightLegInvMtx, new Vector3(0.25 / 16, 3 / 16, 0.25 / 16));
   }
 }
 

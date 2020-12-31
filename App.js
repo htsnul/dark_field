@@ -116,6 +116,9 @@ class App {
   get lightManager() {
     return this._lightManager;
   }
+  get hero() {
+    return this._hero;
+  }
   update() {
     performance.clearMarks("update start");
     performance.mark("update start");

@@ -60,7 +60,7 @@ class Stage {
         if (enemyData === undefined) {
           continue;
         }
-        const pos = new Vector2(Stage.CELL_WIDTH * (x + 0.5), Stage.CELL_WIDTH * (y + 0.5));
+        const pos = new Vector3(Stage.CELL_WIDTH * (x + 0.5), 0, -Stage.CELL_WIDTH * (y + 0.5));
         switch (enemyData.type) {
           case 'Enemy0':
             new Enemy0(pos);
