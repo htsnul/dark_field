@@ -112,6 +112,8 @@ class App {
     setInterval(() => this.update(), 100);
   }
   update() {
+    performance.clearMarks("update start");
+    performance.mark("update start");
     if (this._enemyManager.isEmpty) {
       //this._stage.goToNextStage(this._hero, this._enemyManager, this._heroAttackManager, bullets);
     }
@@ -129,6 +131,15 @@ class App {
       this._screen.drawText(new Vector2(0, 0), dirAlphabet, [255, 255, 255]);
     }
     this._controller.updatePrev();
+    {
+      performance.measure("update", "update start");
+      const duration = performance.getEntriesByName("update")[0].duration;
+      const durationStr = duration.toFixed(2);
+      this._screen.drawText(
+        new Vector2(Screen.WIDTH - durationStr.length * 8, 0), durationStr, [255, 255, 255]
+      );
+      performance.clearMeasures("update");
+    }
     this._screen.endFrame();
   }
   _getDistance(rayPos) {
