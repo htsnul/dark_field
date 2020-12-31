@@ -11,7 +11,14 @@ class Skeleton {
   }
   update() {
     this._count++;
-    this._bodyInvMtx = Matrix4.translate(this._pos.negated());
+    const vel = Vector3.sub(app.hero.position, this._pos).normalized().scaled(1 / 64);
+    //this._pos.add(vel);
+    //const angle = Math.atan2(vel.z, vel.x) - Math.PI / 2;
+    const angle = this._count * Math.PI / 16;
+    this._bodyInvMtx = Matrix4.mul(
+      Matrix4.rotateY(angle),
+      Matrix4.translate(this._pos.negated())
+    );
     this._headInvMtx = Matrix4.mul(
       Matrix4.translate(new Vector3(0, 3 / 16, 0)),
       this._bodyInvMtx

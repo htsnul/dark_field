@@ -4,11 +4,12 @@ class Matrix4 {
     this.m = m;
   }
   static mul() {
-    const m = [];
+    let m = [];
     let m0, m1;
     m0 = arguments[0].m;
     for (let i = 1; i < arguments.length; ++i) {
       m1 = arguments[i].m;
+      m = [];
       for (let x = 0; x < 4; ++x) {
         for (let y = 0; y < 4; ++y) {
           m[4 * x + y] = (
