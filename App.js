@@ -140,6 +140,53 @@ class App {
      this._heroAttackManager.getDistance(rayPos),
     );
   }
+  _calcRayMarchingPointColor(eyePos, rayDir) {
+    let collisionPos;
+    let rayPos = eyePos.clone();
+    let color = [0, 0, 0];
+    for (let i = 0; i < 64; ++i) {
+      const dist = this._getDistance(rayPos);
+      if (dist < 0.01) {
+        collisionPos = rayPos;
+        break;
+      }
+      rayPos.add(rayDir.scaled(dist));
+    }
+    if (collisionPos === undefined) {
+      return color;
+    }
+    const collisionNormal = RayMarchingUtil.getNormal(collisionPos, (rayPos) => this._getDistance(rayPos));
+    {
+      const distFromCam = Vector3.sub(collisionPos, eyePos).length();
+      const dot = Vector3.dot(rayDir.negated(), collisionNormal);
+      const intensity = Math.min(Math.pow(2, -distFromCam / 2) * dot, 1);
+      color = [255 * intensity, 255 * intensity, 255 * intensity];
+    }
+    this._heroAttackManager._attacks.forEach((attack) => {
+      const lightPos = attack._pos;
+      const lightDistance = Vector3.sub(lightPos, collisionPos).length();
+      const rayDir = Vector3.sub(lightPos, collisionPos).normalized();
+      let rayPos = collisionPos.clone();
+      rayPos.add(rayDir.scaled(0.02));
+      for (let i = 0; i < 64; ++i) {
+        const dist = this._getDistance(rayPos);
+        if (dist < 0.01) {
+          if (Vector3.sub(rayPos, lightPos).length() < 1 / 16 + 0.01) {
+            const dot = Vector3.dot(rayDir, collisionNormal);
+            if (dot > 0) {
+              const intensity = Math.min(Math.pow(2, -lightDistance / 2) * dot, 1);
+              color[0] = Math.min(color[0] + 255 * intensity, 255); 
+              color[1] = Math.min(color[1] + 128 * intensity, 255); 
+              color[2] = Math.min(color[2] +  64 * intensity, 255); 
+            }
+          }
+          break;
+        }
+        rayPos.add(rayDir.scaled(dist));
+      }
+    });
+    return color;
+  }
   //   z
   //  /
   // +-- x
@@ -153,22 +200,9 @@ class App {
       const fy = -0.5 + y / height;
       for (let x = 0; x < width; ++x) {
         const fx = (-0.5 + x / width) * width / height;
-        const camPos = this._hero.position;
+        const eyePos = this._hero.position;
         const rayDir = new Vector3(fx, fy, 1).normalized().multiplied(Matrix4.rotateY(this._hero.angle));
-        let rayPos = camPos.clone();
-        let color = [0, 0, 0];
-        for (let i = 0; i < 40; ++i) {
-          const dist = this._getDistance(rayPos);
-          if (dist < 0.01) {
-            const distFromCam = Vector3.sub(rayPos, camPos).length();
-            const normal = RayMarchingUtil.getNormal(rayPos, (rayPos) => this._getDistance(rayPos));
-            const dot = Vector3.dot(rayDir.negated(), normal);
-            const intensity = Math.min(Math.pow(2, -distFromCam / 2) * dot, 1);
-            color = [255 * intensity, 255 * intensity, 255 * intensity];
-            break;
-          }
-          rayPos = Vector3.add(rayPos, rayDir.scaled(dist));
-        }
+        const color = this._calcRayMarchingPointColor(eyePos, rayDir);
         this._screen.drawSquare(
           new Vector2((x + 0.5) * pixelW, (y + 0.5) * pixelW), pixelW,
           color,

@@ -12,7 +12,7 @@ class HeroFireball {
     const velSign = new Vector3(0, 0, 0);
     velSign.x += +Math.sin(this._angle);
     velSign.z += +Math.cos(this._angle);
-    const vel = velSign.scaled(0.5);
+    const vel = velSign.scaled(1 / 2);
     this._pos.add(vel);
     if (stage.isHit(this._pos)) {
       //new Explosion(this._pos, 2);
