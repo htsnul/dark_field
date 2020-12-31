@@ -2,6 +2,7 @@ import Controller from "./Controller.js"
 import EnemyManager from "./EnemyManager.js"
 import Hero from "./Hero.js"
 import HeroAttackManager from "./HeroAttackManager.js"
+import LightManager from "./LightManager.js"
 import Matrix4 from "./Matrix4.js"
 import RayMarchingUtil from "./RayMarchingUtil.js"
 import Screen from "./Screen.js"
@@ -102,6 +103,7 @@ class App {
   constructor() {
     this._controller = new Controller();
     this._screen = new Screen();
+    this._lightManager = new LightManager();
     this._stage = new Stage();
     this._hero = new Hero();
     this._enemyManager = new EnemyManager();
@@ -110,6 +112,9 @@ class App {
     effects = new Effects();
     this._stage.reset(this._hero, this._enemyManager, this._heroAttackManager, bullets);
     setInterval(() => this.update(), 100);
+  }
+  get lightManager() {
+    return this._lightManager;
   }
   update() {
     performance.clearMarks("update start");
@@ -183,39 +188,52 @@ class App {
     );
     const material = closest.material;
     let color = [0, 0, 0];
-    if (material && material.isLight) {
-      color = [255, 224, 224];
+    if (material && material.light) {
+      color = [255, 255, 255];
+      if (material.color) {
+        color = material.color;
+      }
       return color;
     }
     {
       const distFromCam = Vector3.sub(collisionPos, eyePos).length();
       const dot = Vector3.dot(rayDir.negated(), collisionNormal);
-      const intensity = Math.min(Math.pow(2, -distFromCam / 2) * dot, 1);
-      let baseColor = [255, 255, 255];
-      if (material && material.color) {
-        baseColor = material.color;
+      if (dot > 0) {
+        const influenceDistance = 4;
+        const intensity = Math.min((1 - distFromCam / influenceDistance) * dot, 1);
+        let baseColor = [255, 255, 255];
+        if (material && material.color) {
+          baseColor = material.color;
+        }
+        color = [baseColor[0] * intensity, baseColor[1] * intensity, baseColor[2] * intensity];
       }
-      color = [baseColor[0] * intensity, baseColor[1] * intensity, baseColor[2] * intensity];
     }
-    this._heroAttackManager._attacks.forEach((attack) => {
-      const lightPos = attack._pos;
+    this._lightManager.lights.forEach((light) => {
+      const lightPos = light.position;
       const lightDistance = Vector3.sub(lightPos, collisionPos).length();
       const rayDir = Vector3.sub(lightPos, collisionPos).normalized();
+      const rayDirDotCollisionNormal = Vector3.dot(rayDir, collisionNormal);
+      if (rayDirDotCollisionNormal <= 0) {
+        return;
+      }
+      const lightIntensity = (Math.max(0, Math.min(
+        (1 - lightDistance / light.influenceDistance) * rayDirDotCollisionNormal, 1
+      )));
+      if (lightIntensity <= 0) {
+        return;
+      }
       let rayPos = collisionPos.clone();
       rayPos.add(rayDir.scaled(0.02));
       for (let i = 0; i < 64; ++i) {
         let closest = { distance: Infinity };
         this._updateClosest(closest, rayPos);
-        if (closest.distance < 0.01) {
-          if (Vector3.sub(rayPos, lightPos).length() < 1 / 16 + 0.01) {
-            const dot = Vector3.dot(rayDir, collisionNormal);
-            if (dot > 0) {
-              const intensity = Math.min(Math.pow(2, -lightDistance / 2) * dot, 1);
-              color[0] = Math.min(color[0] + 255 * intensity, 255); 
-              color[1] = Math.min(color[1] + 128 * intensity, 255); 
-              color[2] = Math.min(color[2] +  64 * intensity, 255); 
-            }
-          }
+        if (closest.material && closest.material.light === light) {
+          const dot = rayDirDotCollisionNormal;
+          color[0] = Math.min(color[0] + light.color[0] * lightIntensity, 255); 
+          color[1] = Math.min(color[1] + light.color[1] * lightIntensity, 255); 
+          color[2] = Math.min(color[2] + light.color[2] * lightIntensity, 255); 
+          break;
+        } else if (closest.distance < 0.01) {
           break;
         }
         rayPos.add(rayDir.scaled(closest.distance));
